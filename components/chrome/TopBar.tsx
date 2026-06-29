@@ -46,7 +46,7 @@ export function TopBar() {
       <div className="mx-auto max-w-6xl">
         {/* floating pill */}
         <div className="flex items-center justify-between gap-4 rounded-full border border-white/10 bg-bg/55 px-4 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl backdrop-saturate-150 sm:px-6 sm:py-3">
-          <ReplayLogo className="h-8 w-auto sm:h-9" />
+          <ReplayLogo className="h-9 w-auto sm:h-10" />
 
           <nav className="hidden items-center gap-8 md:flex">
             {TABS.map((t) => (
