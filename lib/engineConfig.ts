@@ -38,11 +38,14 @@ export const ENGINE = {
   /** Cap device-pixel-ratio so retina phones don't over-render the canvas. */
   DPR_CAP: 2,
 
-  /** Mobile only: max number of decoded frames held in memory at once. The
-   *  engine keeps a sliding window around the playhead and frees the rest, so
-   *  iOS Safari can't OOM-crash (desktop keeps every frame resident). At the
-   *  1280×720 mobile set this caps decoded RAM near ~120 MB. */
-  MOBILE_MAX_DECODED: 32,
+  /** Mobile only: max number of decoded frames held in memory at once. When
+   *  finite, the engine keeps a sliding window around the playhead and frees
+   *  the rest so iOS Safari can't OOM-crash — at the cost of some scroll
+   *  choppiness when a fast flick outruns the window. Set to Infinity to
+   *  preload every frame like desktop (smoothest, but uses ~620 MB at the
+   *  1280×720 set — only safe if the device can hold the whole sequence).
+   *  TESTING: Infinity to check if the 1280×720 shrink alone avoids the crash. */
+  MOBILE_MAX_DECODED: Infinity as number,
   /** Frames to prefetch ahead of / behind the mobile playhead each tick. */
   MOBILE_WINDOW_AHEAD: 16,
   MOBILE_WINDOW_BEHIND: 6,
