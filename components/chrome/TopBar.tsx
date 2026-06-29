@@ -81,7 +81,7 @@ export function TopBar() {
               href={LOCATIONS[0].mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mono-label hidden rounded-full border border-tcg-red px-4 py-2 !text-[10px] text-tcg-red transition-colors hover:bg-tcg-red hover:text-white sm:inline-block"
+              className="mono-label hidden rounded-full border border-tcg-red px-4 py-2 !text-[10px] !text-tcg-red transition-colors hover:bg-tcg-red hover:!text-white sm:inline-block"
             >
               Visit Us
             </a>
