@@ -74,6 +74,16 @@ export function ScrollStage({ manifest, children }: Props) {
   const setPhase = useCallback((p: Phase) => {
     phaseRef.current = p;
     setPhaseState(p);
+    // remember that the visitor has entered the world, so a refresh (which
+    // restores scroll position) doesn't re-show the locked intro and trap them
+    // mid-page with nothing to tap.
+    if (p === "world") {
+      try {
+        sessionStorage.setItem("tcg:entered", "1");
+      } catch {
+        /* private mode / storage disabled — intro just replays, no harm */
+      }
+    }
     window.dispatchEvent(new CustomEvent("tcg:phase", { detail: { phase: p } }));
   }, []);
 
@@ -100,10 +110,21 @@ export function ScrollStage({ manifest, children }: Props) {
 
   // initial lock + phase, touch detection, and the replay listener
   useEffect(() => {
-    if (prefersReducedMotion()) {
+    let entered = false;
+    try {
+      entered = sessionStorage.getItem("tcg:entered") === "1";
+    } catch {
+      /* ignore */
+    }
+    if (prefersReducedMotion() || entered) {
+      // already been through the intro this session (or reduced motion): drop
+      // straight into the world, unlocked, and keep the restored scroll spot.
       setPhase("world");
       setScrollLock(false);
     } else {
+      // genuine first view: show the locked intro, but make sure the page is at
+      // the top so the ball (and its tap prompt) is actually on screen.
+      window.scrollTo(0, 0);
       setPhase("closed");
       setScrollLock(true);
     }
