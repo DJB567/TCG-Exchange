@@ -137,6 +137,13 @@ export function ScrollStage({ manifest, children }: Props) {
     const last = first + total - 1;
     const bitmaps: (FrameImage | undefined)[] = new Array(last + 1);
 
+    // Memory strategy. Desktop keeps every decoded frame resident (instant
+    // scrubbing). Mobile holds only a sliding window around the playhead and
+    // frees the rest, so iOS Safari can't run out of memory and crash.
+    const MAX_DECODED =
+      dir === "mobile" ? ENGINE.MOBILE_MAX_DECODED : Infinity;
+    const loaded = new Set<number>();
+
     // The clip is [ intro frames (ball → opens → lands) | world frames ]. The
     // intro plays on click (timer-driven); the world is dwell-remapped across
     // the whole scroll runway and is where the content sections live.
@@ -282,9 +289,29 @@ export function ScrollStage({ manifest, children }: Props) {
       }
     };
 
-    // ---- frame loading ---------------------------------------------------
+    // ---- frame loading + mobile memory window ----------------------------
+    const inflight = new Set<number>();
+
+    // Free decoded frames farthest from the playhead until we're back under the
+    // cap. Desktop's cap is Infinity, so this is a no-op there.
+    const evictIfNeeded = () => {
+      if (loaded.size <= MAX_DECODED) return;
+      const center = first + currentFrame;
+      const far = [...loaded].sort(
+        (a, b) => Math.abs(b - center) - Math.abs(a - center),
+      );
+      while (loaded.size > MAX_DECODED && far.length) {
+        const idx = far.shift()!;
+        const b = bitmaps[idx];
+        if (b && "close" in b) (b as ImageBitmap).close();
+        bitmaps[idx] = undefined;
+        loaded.delete(idx);
+      }
+    };
+
     const loadFrame = async (i: number): Promise<void> => {
-      if (bitmaps[i] || disposed) return;
+      if (bitmaps[i] || inflight.has(i) || disposed) return;
+      inflight.add(i);
       const url = frameUrl(dir, i);
       try {
         if (typeof createImageBitmap === "function") {
@@ -300,9 +327,22 @@ export function ScrollStage({ manifest, children }: Props) {
             img.src = url;
           });
         }
+        loaded.add(i);
+        evictIfNeeded();
       } catch {
         /* leave hole; nearestLoaded() covers it so there's never a white flash */
+      } finally {
+        inflight.delete(i);
       }
+    };
+
+    // Mobile: keep a window of frames around `centerIdx` resident (fire-and-
+    // forget). Desktop preloads everything up front, so this is a no-op there.
+    const ensureWindow = (centerIdx: number) => {
+      if (MAX_DECODED === Infinity) return;
+      const lo = Math.max(first, centerIdx - ENGINE.MOBILE_WINDOW_BEHIND);
+      const hi = Math.min(last, centerIdx + ENGINE.MOBILE_WINDOW_AHEAD);
+      for (let i = lo; i <= hi; i++) if (!bitmaps[i]) loadFrame(i);
     };
 
     // ---- reduced-motion path --------------------------------------------
@@ -384,6 +424,7 @@ export function ScrollStage({ manifest, children }: Props) {
           const target = introFrames + remap(t) * (worldFrames - 1);
           currentFrame += (target - currentFrame) * ENGINE.LERP_FACTOR;
           const idx = first + Math.round(currentFrame);
+          ensureWindow(idx);
           drawFrame(nearestLoaded(idx), isBallFrame(idx));
           applyOverlays(t, true);
           // Fade the dust particles out as we approach + enter the open garage,
@@ -411,6 +452,7 @@ export function ScrollStage({ manifest, children }: Props) {
           );
           currentFrame = easeOutSine(p) * Math.max(0, introFrames - 1);
           const idx = first + Math.round(currentFrame);
+          ensureWindow(idx);
           drawFrame(nearestLoaded(idx), isBallFrame(idx));
           applyOverlays(0, false);
           if (particlesRef.current) particlesRef.current.style.opacity = "1";
@@ -421,8 +463,10 @@ export function ScrollStage({ manifest, children }: Props) {
             setScrollLock(false);
           }
         } else {
-          // closed: rest on the first frame (the closed ball)
+          // closed: rest on the first frame (the closed ball); warm the intro
+          // window so the click-to-open animation has frames ready
           currentFrame = 0;
+          ensureWindow(first);
           drawFrame(nearestLoaded(first), true);
           applyOverlays(0, false);
           if (particlesRef.current) particlesRef.current.style.opacity = "1";
@@ -441,9 +485,26 @@ export function ScrollStage({ manifest, children }: Props) {
       if (disposed) return;
       drawFrame(nearestLoaded(first), true);
 
-      // Load the FULL intro before the ball becomes clickable, so the click-to-
-      // open animation is always buttery (these frames play the instant they
-      // click). The loader bar reflects this.
+      // Mobile: don't bulk-load — that would decode the whole sequence into
+      // memory at once and crash iOS. Warm just a lead-in of intro frames, then
+      // let the rAF window stream the rest around the playhead (frames are tiny,
+      // so the open animation stays smooth and nearestLoaded covers any gap).
+      if (MAX_DECODED !== Infinity) {
+        const lead = Math.min(introFrames, ENGINE.MOBILE_WINDOW_AHEAD);
+        for (let i = first; i < first + lead && i <= last; i++) {
+          if (disposed) return;
+          await loadFrame(i);
+          setLoadPct(Math.round(((i - first + 1) / lead) * 100));
+          drawFrame(nearestLoaded(first), true);
+        }
+        setReady(true);
+        startLoop();
+        return;
+      }
+
+      // Desktop: load the FULL intro before the ball becomes clickable, so the
+      // click-to-open animation is always buttery (these frames play the instant
+      // they click). The loader bar reflects this.
       const introList: number[] = [];
       for (let i = first; i < first + introFrames && i <= last; i++) {
         introList.push(i);

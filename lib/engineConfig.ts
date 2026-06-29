@@ -38,6 +38,15 @@ export const ENGINE = {
   /** Cap device-pixel-ratio so retina phones don't over-render the canvas. */
   DPR_CAP: 2,
 
+  /** Mobile only: max number of decoded frames held in memory at once. The
+   *  engine keeps a sliding window around the playhead and frees the rest, so
+   *  iOS Safari can't OOM-crash (desktop keeps every frame resident). At the
+   *  1280×720 mobile set this caps decoded RAM near ~120 MB. */
+  MOBILE_MAX_DECODED: 32,
+  /** Frames to prefetch ahead of / behind the mobile playhead each tick. */
+  MOBILE_WINDOW_AHEAD: 16,
+  MOBILE_WINDOW_BEHIND: 6,
+
   /** How many evenly-spaced frames to load before hiding the loader. */
   CRITICAL_FRAMES: 16,
   /** How many frames to fetch per background batch after critical frames. */
