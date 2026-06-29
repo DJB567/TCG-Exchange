@@ -85,7 +85,7 @@ export type SectionMeta = {
 // Three bold "beats" that fade over the hero video as it plays (Terminal-style
 // statements). The real content lives in normal page sections below the hero.
 export const SECTIONS: SectionMeta[] = [
-  { id: "beat1", label: "Enter", showAt: 0.04, hideAt: 0.32, anchor: "center", tint: "red" },
+  { id: "beat1", label: "Enter", showAt: 0, hideAt: 0.32, anchor: "center", tint: "red" },
   { id: "beat2", label: "Trade", showAt: 0.4, hideAt: 0.64, anchor: "center", tint: "green" },
   { id: "beat3", label: "Hub", showAt: 0.72, hideAt: 1.001, anchor: "lower-center", tint: "red" },
 ];
