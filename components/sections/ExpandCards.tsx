@@ -3,9 +3,10 @@
 import { useState } from "react";
 
 /**
- * Expand-on-hover image gallery (adapted from a 21st.dev component). Desktop:
- * hovering a card widens it and shrinks the rest. Mobile: a swipe strip (no
- * hover on touch). Light "gallery wall" inside the dark Events section.
+ * Expand image gallery (adapted from a 21st.dev component). Same accordion on
+ * both: one card expanded, the rest shrunk to spines. Desktop drives it on
+ * hover; mobile (no hover) drives it on tap — the shrunk spines signal there's
+ * more to open. Light "gallery wall" inside the dark Events section.
  *
  * Per-game artwork (square 1:1, ~1400px) lives in /public/gallery. Games are
  * interleaved so no two neighbors share a franchise.
@@ -49,27 +50,33 @@ export function ExpandCards() {
         ))}
       </div>
 
-      {/* mobile: horizontal swipe strip. data-lenis-prevent lets the native
-          horizontal scroll work — otherwise Lenis swallows the touch gesture
-          and the strip is stuck on the first cards. */}
-      <div
-        data-lenis-prevent
-        className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 lg:hidden"
-      >
-        {IMAGES.map((img, idx) => (
-          <div
-            key={idx}
-            className="relative h-56 w-44 shrink-0 snap-center overflow-hidden rounded-2xl"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={img.src}
-              alt={img.alt}
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
-          </div>
-        ))}
+      {/* mobile/tablet: tap-driven accordion (mirrors the desktop hover effect).
+          The tapped card grows (flex-grow 6) and the rest collapse to spines
+          (flex-grow 1), so it's obvious there are more cards to open. */}
+      <div className="flex items-stretch gap-1.5 lg:hidden">
+        {IMAGES.map((img, idx) => {
+          const open = expanded === idx;
+          return (
+            <button
+              key={idx}
+              type="button"
+              aria-label={img.alt}
+              aria-expanded={open}
+              onClick={() => setExpanded(idx)}
+              className={`relative h-56 min-w-0 overflow-hidden rounded-2xl transition-all duration-500 ease-in-out ${
+                open ? "flex-[6_1_0%]" : "flex-[1_1_0%]"
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img.src}
+                alt={img.alt}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
