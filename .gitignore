@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# source video (site runs on extracted frames; mp4s are raw material only)
+public/video/
+public/_frames_backup/
+
+# local dev tooling / throwaway artifacts
+.claude/
+font-specimens*.pdf

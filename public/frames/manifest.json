@@ -1,0 +1,9 @@
+{
+  "frameCount": 168,
+  "scrollHeightVh": 650,
+  "introFrames": 48,
+  "desktopBytes": 41113996,
+  "mobileBytes": 41113996,
+  "framePattern": "frame-%04d.webp",
+  "firstIndex": 1
+}
