@@ -49,8 +49,13 @@ export function ExpandCards() {
         ))}
       </div>
 
-      {/* mobile: horizontal swipe strip */}
-      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 lg:hidden">
+      {/* mobile: horizontal swipe strip. data-lenis-prevent lets the native
+          horizontal scroll work — otherwise Lenis swallows the touch gesture
+          and the strip is stuck on the first cards. */}
+      <div
+        data-lenis-prevent
+        className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 lg:hidden"
+      >
         {IMAGES.map((img, idx) => (
           <div
             key={idx}
