@@ -15,7 +15,7 @@ export function PhotoBand({
   return (
     <section className="panel-top overflow-hidden">
       <div
-        className="relative flex h-[58vh] min-h-[360px] items-center justify-center bg-cover bg-fixed bg-center px-6 text-center"
+        className="relative flex h-[58vh] min-h-[360px] items-center justify-center bg-cover bg-scroll bg-center px-6 text-center md:bg-fixed"
         style={{ backgroundImage: `url('${image}')` }}
       >
         <div
